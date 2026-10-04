@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stall – rent any parking spot</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Figtree:wght@400;500;600&display=swap">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f1f3ee;--card:#fff;--ink:#18212b;--mute:#5d6875;--line:#cdd3da;--asph:#27303b;--yel:#f4c430;--ok:#1d8a5a;--bad:#c2412d;--map:#d5dbe0;--road:#f6f7f8;--green:#cfe0cc;--water:#bcd3e0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10151a;--card:#1a212a;--ink:#eef1f4;--mute:#9aa6b3;--line:#2f3945;--asph:#0b0f13;--map:#232c36;--road:#344050;--green:#23342a;--water:#1d3342}}
+:root[data-theme="dark"]{--bg:#10151a;--card:#1a212a;--ink:#eef1f4;--mute:#9aa6b3;--line:#2f3945;--asph:#0b0f13;--map:#232c36;--road:#344050;--green:#23342a;--water:#1d3342}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 Figtree,system-ui,sans-serif}
+h1,h2,h3{font-family:'Bricolage Grotesque',Impact,sans-serif;margin:0;letter-spacing:-.01em}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--yel);outline-offset:2px}
+header{background:var(--asph);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:6px solid var(--yel)}
+.logo{font:800 26px 'Bricolage Grotesque',Impact,sans-serif;letter-spacing:.02em}
+.logo i{font-style:normal;color:var(--yel)}
+nav{display:flex;gap:6px;margin-left:auto}
+nav button{background:none;border:0;color:#cfd6de;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600}
+nav button[aria-pressed=true]{background:var(--yel);color:#18212b}
+main{max-width:1180px;margin:0 auto;padding:18px 16px 60px}
+.search{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;background:var(--card);padding:12px;border-radius:14px;border:1px solid var(--line)}
+.search label{display:flex;flex-direction:column;font-size:12px;color:var(--mute);gap:3px;font-weight:600}
+.search input,.search select,.f input,.f select{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;color:var(--ink);width:100%}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}
+.chip{border:1.5px solid var(--line);background:var(--card);padding:9px 14px;border-radius:99px;cursor:pointer;font-weight:500}
+.chip[aria-pressed=true]{background:var(--asph);color:#fff;border-color:var(--asph)}
+.chip.ex[aria-pressed=true]{background:var(--yel);color:#18212b;border-color:var(--yel)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.list{display:flex;flex-direction:column;gap:10px}
+.count{color:var(--mute);margin:0 0 4px}
+.spot{border-radius:16px!important;display:grid;grid-template-columns:96px 1fr auto;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;cursor:pointer;text-align:left;width:100%}
+.spot:hover,.spot.on{border-color:var(--ink)}
+.bay{height:76px;border:4px solid var(--yel);border-bottom:0;border-radius:6px 6px 0 0;display:grid;place-items:center;font:800 13px 'Bricolage Grotesque',sans-serif;text-align:center;background:var(--bg);padding:2px}
+.spot h3{font-size:17px}
+.meta{color:var(--mute);font-size:13px}
+.tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
+.tag{font-size:11.5px;background:var(--bg);border-radius:5px;padding:1px 7px;font-weight:600}
+.price{text-align:right;font:800 20px 'Bricolage Grotesque',sans-serif;white-space:nowrap}
+.price small{display:block;font:500 12px Figtree,sans-serif;color:var(--mute)}
+.map{position:sticky;top:8px;height:560px;z-index:0;border-radius:14px;overflow:hidden;background:var(--map);border:1px solid var(--line)}
+.leaflet-marker-icon .pin{left:0;top:0}.leaflet-container{font:inherit;z-index:0}
+.pin{position:absolute;transform:translate(-50%,-50%);background:var(--asph);color:#fff;border:2px solid #fff;border-radius:99px;padding:3px 9px;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 2px 6px #0004}
+.pin.on{background:var(--yel);color:#18212b;z-index:2;transform:translate(-50%,-50%) scale(1.15)}
+.pin.na{opacity:.45}
+.btn{background:var(--asph);color:var(--yel);border:0;border-radius:14px;padding:14px 18px;font-size:17px;font-weight:700;cursor:pointer;width:100%}
+.btn.sec{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+dialog{border:0;border-radius:16px;padding:0;max-width:520px;width:calc(100% - 24px);background:var(--card);color:var(--ink)}
+dialog::backdrop{background:#0008}
+.dlg{padding:20px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;justify-content:space-between;gap:10px}
+.total{font:800 24px 'Bricolage Grotesque',sans-serif}
+.note{padding:8px 10px;border-radius:8px;font-size:13px;font-weight:600}
+.note.ok{background:#1d8a5a22;color:var(--ok)}.note.bad{background:#c2412d22;color:var(--bad)}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:10px;background:var(--card);padding:18px;border-radius:14px;border:1px solid var(--line);max-width:700px}
+.f label{display:flex;flex-direction:column;font-size:12px;font-weight:600;color:var(--mute);gap:3px}
+.f .full{grid-column:1/-1}
+.checks{display:flex;gap:8px 14px;flex-wrap:wrap;color:var(--ink)!important}
+.checks label{flex-direction:row;align-items:center;gap:5px;font-size:14px;color:var(--ink)}
+.checks input{width:auto}
+.hero{background:var(--yel);color:#18212b;border-radius:18px;padding:18px 20px;margin-bottom:14px}.hero h1{font-size:28px}.hero p{margin:6px 0 10px}.steps{display:flex;gap:8px;flex-wrap:wrap}.steps span{background:#fff8;border-radius:99px;padding:5px 12px;font-weight:600;font-size:14px}.empty{padding:28px;text-align:center;color:var(--mute);background:var(--card);border-radius:12px;border:1px dashed var(--line)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--asph);color:#fff;padding:11px 18px;border-radius:10px;font-weight:600;z-index:9}
+@media(max-width:820px){.search{grid-template-columns:1fr 1fr}.search label:first-child{grid-column:1/-1}.layout{grid-template-columns:1fr}.map{position:relative;height:300px;order:-1}.f{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:no-preference){.pin{transition:transform .15s}}
+</style>
+</head>
+<body>
+<header><div class="logo">STALL<i>.</i></div><nav aria-label="Sections"><button data-t="find" aria-pressed="true">Find a spot</button><button data-t="trips" aria-pressed="false">My bookings</button><button data-t="host" aria-pressed="false">Rent out my space</button></nav><button class="chip" id="auth" style="margin-left:6px">Log in</button></header>
+<main id="app"></main>
+<dialog id="dlg"></dialog>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const TYPES=['Driveway','Apartment stall','Garage','Carport','Business lot','Rooftop','Yard or field','RV & boat pad','Event lot'];
+const SIZES=['Small car','Regular car','SUV','Truck','RV or van'];
+const ICON={'Driveway':'🏠','Apartment stall':'🏢','Garage':'🚪','Carport':'⛱️','Business lot':'🏪','Rooftop':'🌇','Yard or field':'🌳','RV & boat pad':'🚐','Event lot':'🎟️'};
+const ic=t=>(ICON[t]||'🅿️')+' '+t;
+const AM=['EV charging','Covered','Gated','Camera','Lit at night','Easy access'];
+let spots=[];
+const iso=d=>{const z=new Date(d-d.getTimezoneOffset()*6e4);return z.toISOString().slice(0,16)};
+const s0=new Date();s0.setMinutes(0,0,0);s0.setHours(s0.getHours()+1);
+let S={tab:'find',q:'',types:new Set(),ev:false,cov:false,size:0,start:iso(s0),end:iso(new Date(+s0+3*36e5)),sel:null,max:100,view:{c:[20,0],z:2},moved:false,center:null};
+let map=null;
+let bookings=[],myb=[],user=null;
+const sb=window.supabase?window.supabase.createClient('https://mlugbudaamaotnvamxbp.supabase.co','sb_publishable_jdrQvMHxXf-z_6M-lklNcg_u8BYPVOs'):null;
+async function load(){
+ try{
+  if(!sb)throw new Error('The Supabase library did not load. Check your internet connection or turn off any ad blocker for this site.');
+  const wait=new Promise((_,no)=>setTimeout(()=>no(new Error('The database took too long to answer.')),10000));
+  const none={data:[],error:null};
+  const [l,b,m]=await Promise.race([Promise.all([sb.from('listings').select('*').order('created_at',{ascending:false}),sb.from('busy_times').select('*'),user?sb.from('bookings').select('*'):Promise.resolve(none)]),wait]);
+  const er=l.error||b.error||m.error;if(er)throw new Error(er.message);
+  spots=l.data.map(r=>({id:r.id,title:r.title,type:r.type,area:r.area,hr:+r.price_hour,day:+r.price_day,size:r.size,am:r.amenities||[],rating:r.rating,host:r.host,when:r.available,lat:r.lat==null?null:+r.lat,lng:r.lng==null?null:+r.lng,owner:r.owner}));
+  bookings=b.data.map(r=>({id:r.listing_id,a:+new Date(r.starts_at),b:+new Date(r.ends_at)}));
+  myb=m.data.filter(r=>r.user_id===user.id).map(r=>({dbid:r.id,id:r.listing_id,a:+new Date(r.starts_at),b:+new Date(r.ends_at),c:+r.total}));
+  S.err=null;S.loaded=true;
+ }catch(e){S.err=String(e&&e.message||e)}
+ render();
+}
+const $=s=>document.querySelector(s);
+const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function hours(){return (new Date(S.end)-new Date(S.start))/36e5}
+function cost(sp){const h=hours();if(!(h>0))return 0;return Math.min(Math.ceil(h)*sp.hr,Math.ceil(h/24)*sp.day)}
+function taken(sp){const a=+new Date(S.start),b=+new Date(S.end);return bookings.some(k=>k.id===sp.id&&a<k.b&&b>k.a)}
+function filtered(){return spots.filter(s=>(!S.types.size||S.types.has(s.type))&&(!S.ev||s.am.includes('EV charging'))&&(!S.cov||s.am.includes('Covered'))&&s.size>=S.size&&s.hr<=S.max).sort((a,b)=>dist(a)-dist(b))}
+function dist(s){if(!S.center||s.lat==null)return 0;const dl=s.lat-S.center[0],dg=(s.lng-S.center[1])*Math.cos(S.center[0]*Math.PI/180);return Math.hypot(dl,dg)*111}
+async function geocode(q){try{const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(q));const j=await r.json();return j[0]?{lat:+j[0].lat,lng:+j[0].lon}:null}catch(e){return null}}
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.append(t);setTimeout(()=>t.remove(),2400)}
+function render(){
+ document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.t===S.tab));
+ $('#app').innerHTML=S.tab==='find'?find():S.tab==='trips'?trips():host();
+ if(S.tab==='find'&&S.loaded)bindFind();if(S.tab==='host'&&user)bindHost();
+ const lg=$('#lg');if(lg)lg.onclick=()=>authDialog();$('#auth').textContent=user?'Log out':'Log in';
+}
+function find(){
+ if(!S.loaded)return `<div class="empty">${S.err?'We couldn’t reach the database: '+esc(S.err)+'. Check that the setup steps in Supabase were run.<br><br><button class="btn" style="width:auto" onclick="load()">Try again</button>':'Loading parking spots…'}</div>`;
+ const list=filtered(),ok=list.filter(s=>!taken(s));
+ return `<div class="hero"><h1>Need a place to park?</h1><p>Rent a driveway, garage, or space from a neighbour. It takes three steps.</p><div class="steps"><span>1. Say when</span><span>2. Pick a spot</span><span>3. Book it</span></div></div><div class="search">
+ <label>Where are you going?<input id="q" value="${esc(S.q)}" placeholder="Type an address or place, then press Enter"></label>
+ <label>When do you arrive?<input type="datetime-local" id="st" value="${S.start}"></label>
+ <label>When do you leave?<input type="datetime-local" id="en" value="${S.end}"></label>
+ <label>What are you driving?<select id="sz">${SIZES.map((n,i)=>`<option value="${i}" ${S.size==i?'selected':''}>${i?n:'Not sure / any'}</option>`).join('')}</select></label></div>
+ <div class="chips" role="group" aria-label="Spot type">${TYPES.map(t=>`<button class="chip" data-ty="${t}" aria-pressed="${S.types.has(t)}">${ic(t)}</button>`).join('')}
+ <button class="chip ex" id="ev" aria-pressed="${S.ev}">⚡ EV charging</button><button class="chip ex" id="cov" aria-pressed="${S.cov}">☂️ Covered</button></div>
+ <div class="layout"><div><p class="count">${ok.length} spot${ok.length==1?'':'s'} free for your times${hours()>0?'':'. Pick a leave time after you arrive.'}</p><div class="list">
+ ${list.length?list.map(card).join(''):`<div class="empty">${spots.length?'Nothing matches yet. Try tapping a highlighted spot type again to turn it off, or choose “Not sure / any” for your vehicle.':'No spots are listed yet. Tap “Rent out my space” to add the first one.'}</div>`}</div></div>
+ <div class="map" id="map" aria-label="Map of spots"></div></div>`;
+}
+function mapBg(){return `<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><rect width="100" height="100" fill="var(--map)"/><path d="M0 90 Q30 80 50 92 T100 86 V100 H0Z" fill="var(--water)"/><rect x="5" y="55" width="22" height="16" rx="3" fill="var(--green)"/><rect x="68" y="8" width="18" height="12" rx="3" fill="var(--green)"/><g stroke="var(--road)" stroke-width="2.4" fill="none" vector-effect="non-scaling-stroke"><path d="M0 35H100M0 62H100M30 0V100M60 0V100M85 0V100M0 15H100"/><path d="M0 80L100 48" stroke-width="3.5"/></g></svg>`}
+function card(s){const t=taken(s),c=cost(s);
+ return `<button class="spot ${S.sel===s.id?'on':''}" data-id="${s.id}"><div class="bay">${ic(s.type)}</div><div><h3>${esc(s.title)}</h3><div class="meta">${esc(s.area)} · fits up to ${SIZES[s.size].toLowerCase()} · ★ ${s.rating}${S.center&&s.lat!=null?' · '+dist(s).toFixed(1)+' km away':''}</div><div class="tags">${s.am.map(a=>`<span class="tag">${a}</span>`).join('')}${t?'<span class="tag" style="color:var(--bad)">Taken at these times</span>':''}</div></div>
+ <div class="price">$${s.hr}<small>per hour</small>${c&&hours()>0?`<small><b>$${c}</b> total</small>`:''}</div></button>`}
+function bindFind(){
+ $('#q').onkeydown=async e=>{if(e.key!=='Enter')return;const q=e.target.value.trim();S.q=q;if(!q)return;
+  const g=await geocode(q);if(!g){toast('We couldn’t find that place. Try adding the city.');return}
+  S.center=[g.lat,g.lng];S.view={c:[g.lat,g.lng],z:15};S.moved=true;render()};
+ drawMap(filtered());
+ $('#st').onchange=e=>{S.start=e.target.value;if(new Date(S.end)<=new Date(S.start))S.end=iso(new Date(+new Date(S.start)+36e5));render()};
+ $('#en').onchange=e=>{S.end=e.target.value;render()};
+ $('#sz').onchange=e=>{S.size=+e.target.value;render()};
+ $('#ev').onclick=()=>{S.ev=!S.ev;render()};$('#cov').onclick=()=>{S.cov=!S.cov;render()};
+ document.querySelectorAll('[data-ty]').forEach(b=>b.onclick=()=>{const t=b.dataset.ty;S.types.has(t)?S.types.delete(t):S.types.add(t);render()});
+ document.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>{S.sel=+b.dataset.id;detail(S.sel)});
+}
+function drawMap(list){
+ const el=$('#map');if(!el)return;
+ if(map){map.remove();map=null}
+ if(!window.L){el.innerHTML='<div class="empty">The map could not load. Check your connection.</div>';return}
+ map=L.map(el).setView(S.view.c,S.view.z);
+ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
+ const pts=[];
+ list.filter(s=>s.lat!=null).forEach(s=>{
+  L.marker([s.lat,s.lng],{title:s.title+', $'+s.hr+' per hour',icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="pin ${S.sel===s.id?'on':''} ${taken(s)?'na':''}">$${s.hr}</div>`})}).addTo(map).on('click',()=>{S.sel=s.id;detail(s.id)});
+  pts.push([s.lat,s.lng]);
+ });
+ if(!S.moved&&pts.length)map.fitBounds(pts,{padding:[40,40],maxZoom:15});
+ map.on('moveend',()=>{const c=map.getCenter();S.view={c:[c.lat,c.lng],z:map.getZoom()};S.moved=true});
+}
+function detail(id){const s=spots.find(x=>x.id===id),t=taken(s),h=hours(),c=cost(s),d=$('#dlg');
+ d.innerHTML=`<div class="dlg"><div class="row"><h2>${esc(s.title)}</h2><button class="btn sec" style="width:auto;padding:4px 10px" id="x" aria-label="Close">✕</button></div>
+ <div class="meta">${esc(s.type)} in ${esc(s.area)} · hosted by ${esc(s.host)} · ★ ${s.rating}</div>
+ <div class="tags">${s.am.map(a=>`<span class="tag">${a}</span>`).join('')}<span class="tag">Fits up to ${SIZES[s.size].toLowerCase()}</span></div>
+ <div class="meta">Available: ${esc(s.when)}</div>
+ <div class="row"><span>$${s.hr} per hour</span><span>Never more than $${s.day} a day</span></div>
+ <div class="row"><span>${new Date(S.start).toLocaleString([], {dateStyle:'medium',timeStyle:'short'})} to<br>${new Date(S.end).toLocaleString([], {dateStyle:'medium',timeStyle:'short'})}</span><span class="total">${h>0?'$'+c:'–'}</span></div>
+ ${t?'<div class="note bad">Someone already has this spot at these times. Try different times or another spot.</div>':h>0?'<div class="note ok">Good news, it’s free at your times. This is a demo, so no real money moves.</div>':'<div class="note bad">Your leave time needs to be after your arrive time.</div>'}
+ <button class="btn" id="bk" ${t||!(h>0)?'disabled':''}>${user?'Book this spot for $'+c:'Log in to book'}</button></div>`;
+ d.showModal();$('#x').onclick=()=>d.close();
+ $('#bk').onclick=async()=>{if(!user){d.close();authDialog('Log in or create an account to book this spot.');return}$('#bk').disabled=true;
+  const {data,error}=await sb.from('bookings').insert({listing_id:s.id,starts_at:new Date(S.start).toISOString(),ends_at:new Date(S.end).toISOString(),total:c}).select().single();
+  d.close();
+  if(error){toast(error.code==='23P01'?'Sorry, someone just booked that spot. Try other times.':'Something went wrong. Please try again.');await load();return}
+  toast('You’re booked! See it under My bookings.');await load()};
+}
+function needLogin(t){return `<div class="empty">${t}<br><br><button class="btn" id="lg" style="width:auto">Log in or sign up</button></div>`}
+function mySpaces(){const m=spots.filter(s=>s.owner&&user&&s.owner===user.id);return m.length?`<h3 style="margin:22px 0 8px">Your spaces</h3><div class="list" style="max-width:700px">${m.map(s=>`<div class="spot" style="cursor:default;grid-template-columns:1fr auto"><div><h3>${esc(s.title)}</h3><div class="meta">${esc(s.area)}</div></div><button class="chip" data-rm="${s.id}">Remove</button></div>`).join('')}</div>`:''}
+function authDialog(msg){const d=$('#dlg');
+ d.innerHTML=`<div class="dlg"><div class="row"><h2>Log in or sign up</h2><button class="btn sec" style="width:auto;padding:4px 10px" id="x" aria-label="Close">✕</button></div>
+ <p class="meta" style="margin:0">${esc(typeof msg==='string'?msg:'Use your email and a password you will remember.')}</p>
+ <div class="f" style="display:flex;flex-direction:column;border:0;padding:0;max-width:none;background:none"><label>Email<input id="a-e" type="email" autocomplete="email"></label><label>Password (at least 6 characters)<input id="a-p" type="password" autocomplete="current-password"></label></div>
+ <div id="a-m" class="note bad" hidden></div>
+ <button class="btn" id="a-in">Log in</button><button class="btn sec" id="a-up">Create a new account</button></div>`;
+ d.showModal();$('#x').onclick=()=>d.close();
+ const say=(t,ok)=>{const m=$('#a-m');m.hidden=false;m.className='note '+(ok?'ok':'bad');m.textContent=t};
+ const creds=()=>({email:$('#a-e').value.trim(),password:$('#a-p').value});
+ $('#a-in').onclick=async()=>{const {error}=await sb.auth.signInWithPassword(creds());if(error)say(/confirm/i.test(error.message)?'Please confirm your email first. Check your inbox.':'That email and password don’t match. Try again.');else{d.close();toast('Welcome back!')}};
+ $('#a-up').onclick=async()=>{const {data,error}=await sb.auth.signUp(creds());if(error)say(error.message);else if(!data.session)say('Almost done! Check your email and tap the confirmation link, then come back and log in.',true);else{d.close();toast('Account created. Welcome!')}};
+}
+function trips(){
+ if(!user)return needLogin('Log in to see your bookings.');
+ const my=myb;
+ if(!my.length)return `<div class="empty">You haven’t booked anything yet. Head to “Find a spot” and pick a space for when you need it.</div>`;
+ return `<h2 style="margin-bottom:12px">My bookings</h2><div class="list" style="max-width:700px">${my.map(k=>{const s=spots.find(x=>x.id===k.id);return `<div class="spot" style="cursor:default;grid-template-columns:96px 1fr auto"><div class="bay">${esc(s.type)}</div><div><h3>${esc(s.title)}</h3><div class="meta">${esc(s.area)}<br>${new Date(k.a).toLocaleString([], {dateStyle:'medium',timeStyle:'short'})} to ${new Date(k.b).toLocaleString([], {dateStyle:'medium',timeStyle:'short'})}</div></div><div class="price">$${k.c}<small><button class="chip" data-cx="${k.dbid}">Cancel</button></small></div></div>`}).join('')}</div>`}
+function host(){
+ if(!user)return needLogin('Log in to rent out your space.');
+ return `<h2 style="margin-bottom:4px">Rent out your space</h2><p class="meta" style="margin:0 0 12px">Got an empty driveway or garage? Fill in the basics and neighbours can book it.</p><form class="f" id="hf" onsubmit="return false">
+ <label class="full">Give your space a name<input id="h-t" required maxlength="60" placeholder="e.g. Driveway two blocks from the station"></label>
+ <label>Spot type<select id="h-ty">${TYPES.map(t=>`<option value="${t}">${ic(t)}</option>`).join('')}</select></label>
+ <label class="full">Street address, with city<input id="h-addr" required maxlength="120" placeholder="e.g. 123 Main St, Springfield"></label>
+ <label>Neighbourhood name (shown to everyone)<input id="h-a" maxlength="30" placeholder="e.g. Old Town"></label>
+ <label>Price for one hour ($)<input id="h-h" type="number" min="1" max="200" value="6" required></label>
+ <label>Most you’ll charge for a day ($)<input id="h-d" type="number" min="1" max="500" value="30" required></label>
+ <label>Biggest vehicle that fits<select id="h-s">${SIZES.map((n,i)=>`<option value="${i}" ${i==2?'selected':''}>${n}</option>`).join('')}</select></label>
+ <label>When is it free to rent?<input id="h-w" maxlength="40" value="Any day, 24 hours"></label>
+ <div class="full checks">${AM.map(a=>`<label><input type="checkbox" value="${a}"> ${a}</label>`).join('')}</div>
+ <button class="btn full" id="hs">Put my space online</button></form>${mySpaces()}`}
+function bindHost(){$('#hs').onclick=async()=>{
+ const g=i=>$(i).value.trim();if(!g('#h-t')||!g('#h-addr')){toast('Please add a name and a street address first.');return}
+ $('#hs').disabled=true;$('#hs').textContent='Finding your address…';
+ const geo=await geocode(g('#h-addr'));
+ if(!geo){toast('We couldn’t find that address. Add the city and try again.');$('#hs').disabled=false;$('#hs').textContent='Put my space online';return}
+ const {data,error}=await sb.from('listings').insert({title:g('#h-t'),type:g('#h-ty'),area:g('#h-a')||'Nearby',address:g('#h-addr'),lat:geo.lat,lng:geo.lng,price_hour:+g('#h-h')||5,price_day:+g('#h-d')||30,size:+g('#h-s'),amenities:[...document.querySelectorAll('.checks input:checked')].map(c=>c.value),available:g('#h-w')||'Any day'}).select().single();
+ if(error){toast('We couldn’t save your space. Please try again.');$('#hs').disabled=false;$('#hs').textContent='Put my space online';return}
+ S.tab='find';S.sel=data.id;S.view={c:[geo.lat,geo.lng],z:15};S.moved=true;toast('Your space is online. Nice work!');await load()}}
+document.querySelector('nav').onclick=e=>{const t=e.target.dataset.t;if(t){S.tab=t;render()}};
+document.addEventListener('click',e=>{const d=e.target.dataset||{};
+ if(d.cx)sb.from('bookings').delete().eq('id',+d.cx).then(()=>{toast('Booking cancelled.');load()});
+ if(d.rm&&confirm('Remove this space? Its bookings will be removed too.'))sb.from('listings').delete().eq('id',+d.rm).then(()=>{toast('Space removed.');load()});
+});
+$('#auth').onclick=()=>{if(user)sb.auth.signOut().then(()=>toast('You’re logged out.'));else authDialog()};
+if(sb){sb.auth.getSession().then(({data})=>{user=data.session?data.session.user:null;load()});
+ sb.auth.onAuthStateChange((ev,ses)=>{const u=ses?ses.user:null;if((u&&u.id)!==(user&&user.id)){user=u;load()}});}
+render();
+</script>
+</body>
+</html>
